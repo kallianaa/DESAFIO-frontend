@@ -1,0 +1,43 @@
+/* src/App.css */
+
+/* Reseta a margem do body para a imagem colar no canto inferior */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.container-principal {
+  /* Configurações de layout */
+  min-height: 100vh; /* Ocupa a tela inteira */
+  width: 100%;
+  font-family: "Arial", sans-serif;
+
+  /* --- O PONTO CRÍTICO --- */
+  /* Este caminho funciona se o App.css e a pasta 'assets' 
+     estiverem ambos dentro da pasta 'src' */
+  background-image: url('./assets/bg-barroco.png');
+  /* ----------------------- */
+
+  /* Configurações da imagem */
+  background-repeat: no-repeat;
+  background-position: left bottom; /* Fixa no canto inferior esquerdo */
+
+  /* --- RESPONSIVIDADE --- */
+  
+  /* Padrão (Desktop): 60% da largura */
+  background-size: 45% auto;
+}
+
+/* Telas Médias (Tablets) */
+@media (max-width: 1024px) {
+  .container-principal {
+    background-size: 75% auto;
+  }
+}
+
+/* Telas Pequenas (Celulares) */
+@media (max-width: 768px) {
+  .container-principal {
+    background-size: 90% auto;
+  }
+}
