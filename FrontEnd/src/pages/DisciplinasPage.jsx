@@ -1,13 +1,54 @@
-// src/pages/DisciplinasPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function DisciplinasPage() {
-  // Dados de exemplo (mock). Depois podem vir da API do back-end.
-  const [disciplinas] = useState([
-    { id: 1, codigo: "MAT101", nome: "Cálculo I", creditos: 4 },
-    { id: 2, codigo: "PROG1", nome: "Programação I", creditos: 6 },
-    { id: 3, codigo: "BD1", nome: "Banco de Dados I", creditos: 4 },
-  ]);
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    const fetchDisciplinas = async () => {
+      setLoading(true);
+      setErro("");
+
+      try {
+        const res = await api.get("/disciplines", {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          withCredentials: true,
+        });
+
+        if (res?.data?.data) {
+          setDisciplinas(res.data.data);
+        } else {
+          setDisciplinas([]);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar disciplinas:", err);
+
+        const status = err?.response?.status;
+
+        if (status === 401) {
+          setErro("Sessão expirada. Faça login novamente.");
+          logout();
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        setErro(err?.response?.data?.message || "Erro ao carregar disciplinas.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDisciplinas();
+  }, [token, logout, navigate]);
 
   const handleMatricular = (disciplina) => {
     alert(`Simulando matrícula em: ${disciplina.nome}`);
@@ -16,14 +57,17 @@ export default function DisciplinasPage() {
   return (
     <div style={styles.container}>
       <h2>Disciplinas Disponíveis</h2>
-      <p>
-        Consulte as disciplinas ofertadas e selecione aquelas em que deseja se
-        matricular.
-      </p>
+      <p>Consulte as disciplinas ofertadas e selecione aquelas em que deseja se matricular.</p>
 
-      {disciplinas.length === 0 ? (
+      {loading && <p>Carregando disciplinas...</p>}
+
+      {erro && <p style={styles.error}>{erro}</p>}
+
+      {!loading && !erro && disciplinas.length === 0 && (
         <p>Não há disciplinas cadastradas.</p>
-      ) : (
+      )}
+
+      {!loading && !erro && disciplinas.length > 0 && (
         <table style={styles.table}>
           <thead>
             <tr>
@@ -75,5 +119,12 @@ const styles = {
     backgroundColor: "#0a625eff",
     color: "white",
     fontWeight: "bold",
+  },
+  error: {
+    color: "#721c24",
+    backgroundColor: "#f8d7da",
+    padding: "10px",
+    borderRadius: "6px",
+    display: "inline-block",
   },
 };

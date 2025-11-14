@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios"; 
+import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [senha, setSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -17,17 +18,28 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { data } = await api.post("/auth/login", { email, senha });
-      
-      if (data?.token) {
-        login(data); 
-        navigate("/disciplinas"); 
-      } else {
-        setMensagem(data?.message || "Login realizado com sucesso!");
+      const { data } = await api.post("/auth/login", { email, senha }, { withCredentials: true });
+
+      if (data?.token && data?.usuario) {
+        login(data.token, data.usuario);
+
+        navigate("/disciplinas", { replace: true });
+        return;
       }
+
+      if (data?.token) {
+        login(data.token, null);
+        navigate("/disciplinas", { replace: true });
+        return;
+      }
+
+      setMensagem(data?.message || "Login realizado com sucesso!");
     } catch (err) {
-      if (err?.response) {
-        setMensagem(err.response.data?.message || "Credenciais inválidas.");
+      console.error(err);
+      const status = err?.response?.status;
+
+      if (status === 401 || status === 403) {
+        setMensagem(err.response?.data?.message || "Credenciais inválidas.");
       } else {
         setMensagem("Erro ao conectar com o servidor.");
       }
@@ -86,6 +98,7 @@ const styles = {
     width: "260px",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    boxSizing: "border-box",
   },
   button: {
     marginTop: "10px",

@@ -9,12 +9,16 @@ import { useAuth } from "./context/AuthContext";
 import "./App.css";
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, usuario } = useAuth();
 
   return (
     <div className="container-principal">
       <header style={styles.header}>
-        {!isAuthenticated ? <h1>Sistema de Matrículas</h1> : <h1>Bem vindo, {localStorage.user}</h1>}
+        {!isAuthenticated ? (
+          <h1>Sistema de Matrículas</h1>
+        ) : (
+          <h1>Bem-vindo, {usuario?.nome ?? "Usuário"}</h1>
+        )}
         <Navigation />
       </header>
 
@@ -41,7 +45,7 @@ export default function App() {
           <Route
             path="/cadastro"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["ADMIN", "PROFESSOR"]}>
                 <CadastroDisciplinaPage />
               </ProtectedRoute>
             }
