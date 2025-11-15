@@ -11,8 +11,6 @@ interface DatabaseConfig {
   database: string;
   charset: string;
   timezone: string;
-  acquireTimeout: number;
-  timeout: number;
 }
 
 const config: DatabaseConfig = {
@@ -23,8 +21,6 @@ const config: DatabaseConfig = {
   database: process.env.DB_NAME || 'DesafioFront',
   charset: 'utf8mb4',
   timezone: 'Z',
-  acquireTimeout: 60000,
-  timeout: 60000,
 };
 
 class Database {

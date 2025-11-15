@@ -123,14 +123,14 @@ class App {
     try {
       const connected = await this.db.testConnection();
       if (!connected) {
-        console.error('Falha na conexão com o banco de dados');
-        process.exit(1);
+        console.warn('Falha na conexão com o banco de dados - servidor iniciado mas endpoints de banco não funcionarão');
+        console.warn('Execute o script SQL em scriptBanco/DesafioFront.sql para criar o banco de dados');
+      } else {
+        console.log('Banco de dados conectado com sucesso');
       }
-
-      console.log('Banco de dados conectado com sucesso');
     } catch (error) {
-      console.error('Erro ao inicializar aplicação:', error);
-      process.exit(1);
+      console.warn('Erro ao conectar ao banco de dados:', error);
+      console.warn('Servidor iniciado mas endpoints de banco não funcionarão');
     }
   }
 
