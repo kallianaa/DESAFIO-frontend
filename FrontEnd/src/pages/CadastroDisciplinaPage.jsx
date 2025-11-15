@@ -1,28 +1,94 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios"; 
+import { useAuth } from "../context/AuthContext";
 
 export default function CadastroDisciplinaPage() {
+  const { token, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [creditos, setCreditos] = useState("");
-  const [disciplinas, setDisciplinas] = useState([]);
-  const [mensagem, setMensagem] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [mensagem, setMensagem] = useState(""); 
+  const [mensagemTipo, setMensagemTipo] = useState(null); 
 
-  const handleSubmit = (e) => {
+  const clearMessages = () => {
+    setMensagem("");
+    setMensagemTipo(null);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    clearMessages();
 
     if (!codigo || !nome || !creditos) {
+      setMensagemTipo("error");
       setMensagem("Preencha todos os campos antes de cadastrar.");
       return;
     }
 
-    const novaDisciplina = { id: Date.now(), codigo, nome, creditos };
-    setDisciplinas([...disciplinas, novaDisciplina]);
+    setLoading(true);
 
-    // Limpa os campos
-    setCodigo("");
-    setNome("");
-    setCreditos("");
-    setMensagem("Disciplina cadastrada com sucesso!");
+    try {
+      const newDisciplina = {
+        codigo: String(codigo).trim(),
+        nome: String(nome).trim(),
+        creditos: Number(creditos),
+      };
+
+      const res = await api.post("/disciplines", newDisciplina, {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+        withCredentials: true,
+      });
+
+      // sucesso
+      // tenta obter uma mensagem do backend, senão usa texto padrão
+      const successMsg =
+        res?.data?.message || "Disciplina cadastrada com sucesso!";
+      setMensagemTipo("success");
+      setMensagem(successMsg);
+
+      // limpa campos
+      setCodigo("");
+      setNome("");
+      setCreditos("");
+    } catch (err) {
+      console.error("Erro ao cadastrar disciplina:", err);
+
+      const status = err?.response?.status;
+
+      const backendMessage = err?.response?.data?.message;
+
+      if (status === 401) {
+        setMensagemTipo("error");
+        setMensagem(
+          backendMessage ||
+            "Sessão expirada ou não autorizada. Você será redirecionado ao login."
+        );
+
+        logout();
+        navigate("/login", { replace: true });
+        return;
+      }
+
+      if (status === 409) {
+        setMensagemTipo("error");
+        setMensagem(
+          backendMessage || "Erro: já existe uma disciplina com esse código."
+        );
+        return;
+      }
+
+      setMensagemTipo("error");
+      setMensagem(
+        backendMessage ||
+          (err?.message ? `Erro: ${err.message}` : "Erro ao cadastrar disciplina.")
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,32 +119,21 @@ export default function CadastroDisciplinaPage() {
           style={styles.input}
         />
 
-        <button type="submit" style={styles.button}>
-          Cadastrar
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? "Cadastrando..." : "Cadastrar"}
         </button>
       </form>
 
-      {mensagem && <p style={styles.mensagem}>{mensagem}</p>}
-
-      {disciplinas.length > 0 && (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nome</th>
-              <th>Créditos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {disciplinas.map((d) => (
-              <tr key={d.id}>
-                <td>{d.codigo}</td>
-                <td>{d.nome}</td>
-                <td>{d.creditos}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {mensagem && (
+        <p
+          style={
+            mensagemTipo === "success"
+              ? { ...styles.mensagem, ...styles.success }
+              : { ...styles.mensagem, ...styles.error }
+          }
+        >
+          {mensagem}
+        </p>
       )}
     </div>
   );
@@ -102,6 +157,7 @@ const styles = {
     width: "260px",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    boxSizing: "border-box",
   },
   button: {
     marginTop: "10px",
@@ -109,18 +165,26 @@ const styles = {
     borderRadius: "6px",
     border: "none",
     cursor: "pointer",
-    backgroundColor: "#00695c", // tom verde institucional
+    backgroundColor: "#00695c",
     color: "white",
     fontWeight: "bold",
   },
   mensagem: {
     marginTop: "10px",
-    color: "#004d40",
     fontWeight: "bold",
   },
-  table: {
-    margin: "30px auto",
-    borderCollapse: "collapse",
-    minWidth: "60%",
+  success: {
+    color: "#155724",
+    backgroundColor: "#d4edda",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    display: "inline-block",
+  },
+  error: {
+    color: "#721c24",
+    backgroundColor: "#f8d7da",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    display: "inline-block",
   },
 };

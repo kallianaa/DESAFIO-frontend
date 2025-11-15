@@ -1,18 +1,50 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMensagem("");
+    setLoading(true);
 
-    // Login "fake" só pra teste
-    if (email === "aluno@teste.com" && senha === "123") {
-      setMensagem("Login realizado com sucesso!");
-    } else {
-      setMensagem("Credenciais inválidas. Use aluno@teste.com / 123 para testar.");
+    try {
+      const { data } = await api.post("/auth/login", { email, senha }, { withCredentials: true });
+
+      if (data?.token && data?.usuario) {
+        login(data.token, data.usuario);
+
+        navigate("/disciplinas", { replace: true });
+        return;
+      }
+
+      if (data?.token) {
+        login(data.token, null);
+        navigate("/disciplinas", { replace: true });
+        return;
+      }
+
+      setMensagem(data?.message || "Login realizado com sucesso!");
+    } catch (err) {
+      console.error(err);
+      const status = err?.response?.status;
+
+      if (status === 401 || status === 403) {
+        setMensagem(err.response?.data?.message || "Credenciais inválidas.");
+      } else {
+        setMensagem("Erro ao conectar com o servidor.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,8 +71,8 @@ export default function LoginPage() {
           required
         />
 
-        <button type="submit" style={styles.button}>
-          Entrar
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
 
@@ -66,6 +98,7 @@ const styles = {
     width: "260px",
     borderRadius: "6px",
     border: "1px solid #ccc",
+    boxSizing: "border-box",
   },
   button: {
     marginTop: "10px",

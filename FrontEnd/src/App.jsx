@@ -1,32 +1,25 @@
-/* src/App.jsx */
-
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DisciplinasPage from "./pages/DisciplinasPage";
 import CadastroDisciplinaPage from "./pages/CadastroDisciplinaPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Navigation from "./components/Navigation";
+import { useAuth } from "./context/AuthContext";
 
-// continua usando seu CSS
 import "./App.css";
 
 export default function App() {
+  const { isAuthenticated, usuario } = useAuth();
+
   return (
     <div className="container-principal">
       <header style={styles.header}>
-        <h1>Sistema de Matrículas</h1>
-        <nav>
-          <Link to="/" style={styles.link}>
-            Início
-          </Link>
-          <Link to="/disciplinas" style={styles.link}>
-            Disciplinas
-          </Link>
-          <Link to="/cadastro" style={styles.link}>
-            Cadastrar Disciplina
-          </Link>
-          <Link to="/login" style={styles.link}>
-            Login
-          </Link>
-        </nav>
+        {!isAuthenticated ? (
+          <h1>Sistema de Matrículas</h1>
+        ) : (
+          <h1>Bem-vindo, {usuario?.nome ?? "Usuário"}</h1>
+        )}
+        <Navigation />
       </header>
 
       <main style={styles.main}>
@@ -34,22 +27,31 @@ export default function App() {
           <Route
             path="/"
             element={
-              <div>
-                <h2>Bem-vindo!</h2>
-                <p>
-                  Acesse o sistema para visualizar disciplinas, cadastrar novas
-                  ofertas e realizar matrículas.
-                </p>
-                <Link to="/login" style={styles.button}>
-                  Ir para Login
-                </Link>
-              </div>
+              isAuthenticated ? <Navigate to="/disciplinas" replace /> : <Navigate to="/login" replace />
             }
           />
 
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/disciplinas" element={<DisciplinasPage />} />
-          <Route path="/cadastro" element={<CadastroDisciplinaPage />} />
+
+          <Route
+            path="/disciplinas"
+            element={
+              <ProtectedRoute>
+                <DisciplinasPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cadastro"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN", "PROFESSOR"]}>
+                <CadastroDisciplinaPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>
@@ -65,24 +67,8 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
   },
-  link: {
-    color: "white",
-    marginLeft: "15px",
-    textDecoration: "none",
-    fontWeight: "bold",
-  },
   main: {
     padding: "2rem",
     textAlign: "center",
-  },
-  button: {
-    display: "inline-block",
-    marginTop: "15px",
-    padding: "10px 20px",
-    borderRadius: "6px",
-    textDecoration: "none",
-    backgroundColor: "#0e620aff",
-    color: "white",
-    fontWeight: "bold",
   },
 };
