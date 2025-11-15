@@ -5,7 +5,9 @@ import { authenticateToken } from '../middleware/auth';
 const router: Router = Router();
 
 router.get('/', authenticateToken, MatriculaController.getAll);
+router.get('/disponiveis', authenticateToken, MatriculaController.getTurmasDisponiveis);
 router.get('/:id', authenticateToken, MatriculaController.getById);
-router.get('/aluno/:alunoId/disponiveis', authenticateToken, MatriculaController.getTurmasDisponiveis);
+router.post('/', authenticateToken, MatriculaController.create);
+router.delete('/:id', authenticateToken, MatriculaController.cancel);
 
 export default router;
